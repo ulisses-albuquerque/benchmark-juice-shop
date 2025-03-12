@@ -1,0 +1,26 @@
+name: "Dockerfile Linter"
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+  schedule:
+    - cron: '31 12 * * 0'
+jobs:
+  lint-dockerfile:
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    permissions:
+      # required for all workflows
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          format: sarif
+          output-file: hadolint.sarif
+      - name: Upload hadolint results
+        uses: actions/upload-sarif@v3
+        with:
+          sarif_file: hadolint.sarif
