@@ -1,0 +1,38 @@
+name: "Dockerfile Linter"
+on:
+  push:
+    paths:
+      - Dockerfile
+    branches: ["master"]
+  pull_request:
+    paths:
+      - Dockerfile
+jobs:
+  lint-dockerfile:
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          format: sarif
+          output-file: hadolint.sarif
+          verbose: 'true'
+          failure-threshold: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hadolint-sarif
+          path: hadolint.sarif
+      - name: Upload SARIF file
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: hadolint.sarif
